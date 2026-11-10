@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>sim-ia — Simuladores de IA</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f5f7fa;
+            color: #2c3e50;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        header {
+            background: #2c3e50;
+            color: white;
+            padding: 2rem 2.5rem 1.8rem;
+            text-align: center;
+        }
+
+        header h1 {
+            font-size: 2rem;
+            font-weight: 800;
+            letter-spacing: 0.04em;
+            margin-bottom: 0.3rem;
+        }
+
+        header .subtitle {
+            font-size: 1rem;
+            opacity: 0.88;
+            margin-bottom: 0.2rem;
+        }
+
+        header .institution {
+            font-size: 0.78rem;
+            opacity: 0.65;
+            letter-spacing: 0.03em;
+        }
+
+        main {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2.5rem 1.5rem;
+        }
+
+        .simulators-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.8rem;
+            max-width: 900px;
+            width: 100%;
+        }
+
+        .sim-card {
+            background: white;
+            border-radius: 14px;
+            padding: 1.8rem;
+            box-shadow: 0 4px 18px rgba(0,0,0,0.09);
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            border-top: 4px solid #3498db;
+            transition: box-shadow 0.2s, transform 0.2s;
+        }
+
+        .sim-card:hover {
+            box-shadow: 0 8px 28px rgba(0,0,0,0.15);
+            transform: translateY(-2px);
+        }
+
+        .sim-card--deepseek {
+            border-top-color: #8e44ad;
+        }
+
+        .sim-card-icon {
+            font-size: 2rem;
+            line-height: 1;
+        }
+
+        .sim-card h2 {
+            font-size: 1.15rem;
+            font-weight: 700;
+            color: #2c3e50;
+        }
+
+        .sim-desc {
+            font-size: 0.83rem;
+            line-height: 1.65;
+            color: #37474f;
+        }
+
+        .sim-features {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 0.35rem;
+            flex: 1;
+        }
+
+        .sim-features li {
+            font-size: 0.78rem;
+            color: #546e7a;
+            padding-left: 1.1rem;
+            position: relative;
+        }
+
+        .sim-features li::before {
+            content: '›';
+            position: absolute;
+            left: 0;
+            font-weight: 700;
+            color: #3498db;
+        }
+
+        .sim-card--deepseek .sim-features li::before {
+            color: #8e44ad;
+        }
+
+        .sim-card button {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 0.65rem 1.2rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 700;
+            font-size: 0.85rem;
+            transition: opacity 0.2s, transform 0.15s;
+            width: 100%;
+            margin-top: auto;
+        }
+
+        .sim-card button:hover  { opacity: 0.88; }
+        .sim-card button:active { transform: scale(0.98); }
+
+        .sim-card--deepseek button {
+            background: #8e44ad;
+        }
+
+        footer {
+            text-align: center;
+            padding: 1rem;
+            font-size: 0.7rem;
+            color: #90a4ae;
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>sim-ia</h1>
+    <p class="subtitle">Simuladores Interactivos de Inteligencia Artificial</p>
+    <p class="institution">Cátedra de Sistemas Inteligentes · Universidad CAECE</p>
+</header>
+
+<main>
+    <div class="simulators-grid">
+
+        <div class="sim-card">
+            <div class="sim-card-icon">🧠</div>
+            <h2>CNN Vision Sim</h2>
+            <p class="sim-desc">
+                Visualiza el flujo completo de entrenamiento e inferencia de una
+                Red Neuronal Convolucional paso a paso. Observá cómo los filtros
+                aprenden a detectar patrones en imágenes sintéticas.
+            </p>
+            <ul class="sim-features">
+                <li>Dataset sintético de 4 clases geométricas</li>
+                <li>Convolución, ReLU, MaxPooling, Flatten, Dense y Softmax</li>
+                <li>Visualización de feature maps y kernels aprendidos</li>
+                <li>Optimizador Adam implementado desde cero</li>
+                <li>Ejecución paso a paso o automática con velocidad configurable</li>
+            </ul>
+            <button onclick="window.open('simuladores/cnn/index.html', '_blank')">
+                Abrir simulador →
+            </button>
+        </div>
+
+        <div class="sim-card sim-card--deepseek">
+            <div class="sim-card-icon">⚡</div>
+            <h2>Arquitectura DeepSeek</h2>
+            <p class="sim-desc">
+                Explorá la arquitectura interna del modelo DeepSeek: Mixture of Experts (MoE),
+                Multi-Head Latent Attention (MLA) y el pipeline completo de inferencia
+                de un Large Language Model de vanguardia.
+            </p>
+            <ul class="sim-features">
+                <li>Mecanismo Mixture of Experts (MoE) con enrutamiento</li>
+                <li>Multi-Head Latent Attention (MLA) y compresión KV-Cache</li>
+                <li>Pipeline token → embedding → capas → salida</li>
+                <li>Comparativa con arquitectura Transformer clásica</li>
+                <li>Ejecución paso a paso siguiendo el flujo de datos real</li>
+            </ul>
+            <button onclick="window.open('simuladores/deepseek/index.html', '_blank')">
+                Abrir simulador →
+            </button>
+        </div>
+
+    </div>
+</main>
+
+<footer>
+    sim-ia · Sistemas Inteligentes · Universidad CAECE · 2026
+</footer>
+
+</body>
+</html>

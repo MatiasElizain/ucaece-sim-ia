@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulador DeepSeek — Cátedra de Sistemas Inteligentes</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header>
+        <h1>Arquitectura DeepSeek — MLA + MoE</h1>
+        <p class="subtitle">Simulación interactiva del flujo de inferencia paso a paso</p>
+    </header>
+
+    <main>
+        <!-- Panel de control (columna izquierda) -->
+        <section id="control-panel">
+            <h2>Configuración</h2>
+
+            <div class="param-group param-group--full">
+                <label for="sel-phrase">Frase de entrada:</label>
+            </div>
+            <div class="param-group param-group--full" style="flex-direction:column; align-items:stretch; gap:0.2rem;">
+                <select id="sel-phrase">
+                    <option value="la red neuronal procesa">la red neuronal procesa</option>
+                    <option value="el modelo selecciona">el modelo selecciona</option>
+                    <option value="inferencia mediante atención">inferencia mediante atención</option>
+                </select>
+            </div>
+
+            <div class="param-group" style="margin-top:0.4rem;">
+                <label for="temperature">Temperatura:</label>
+                <input type="range" id="temperature" min="0.1" max="2.0" step="0.1" value="1.0">
+                <span id="temperature-value">1.0</span>
+            </div>
+
+            <div class="param-group">
+                <label for="top-k">Top-K expertos:</label>
+                <select id="top-k">
+                    <option value="1">1</option>
+                    <option value="2" selected>2</option>
+                    <option value="3">3</option>
+                </select>
+            </div>
+
+            <div class="param-group">
+                <label for="n-layers">Capas a simular:</label>
+                <select id="n-layers">
+                    <option value="1">1</option>
+                    <option value="2" selected>2</option>
+                </select>
+            </div>
+
+            <div class="param-group">
+                <label for="auto-speed">Velocidad auto:</label>
+                <select id="auto-speed">
+                    <option value="4000">4 s — Muy lento</option>
+                    <option value="2500" selected>2.5 s — Lento</option>
+                    <option value="1500">1.5 s — Moderado</option>
+                    <option value="800">0.8 s — Fluido</option>
+                </select>
+            </div>
+
+            <div class="buttons">
+                <button id="btn-auto-play">▶ Auto-ejecutar</button>
+                <button id="btn-step">Siguiente paso</button>
+                <button id="btn-layer">1 capa completa</button>
+                <button id="btn-run">Ejecutar todo</button>
+                <button id="btn-reset">Reiniciar</button>
+                <button id="btn-overview">ℹ Acerca de la simulación</button>
+            </div>
+        </section>
+
+        <!-- Panel de visualización (columna derecha) -->
+        <section id="visualization">
+            <h2 id="step-description">Seleccioná una frase y presioná "Siguiente paso" para comenzar.</h2>
+            <div id="arch-diagram"></div>
+            <div id="step-panel"></div>
+        </section>
+    </main>
+
+    <!-- Panel overview -->
+    <div id="overview-overlay">
+        <div id="overview-card">
+            <button id="overview-close" title="Cerrar">✕</button>
+
+            <h2 class="ov-main-title">Simulador de Arquitectura DeepSeek</h2>
+
+            <div class="ov-section">
+                <h3>Contexto</h3>
+                <p><strong>DeepSeek-V3</strong> es un modelo de lenguaje de tipo <em>Mixture of Experts</em> (MoE)
+                con 671 B de parámetros totales, de los cuales solo <strong>37 B se activan por token</strong>.
+                Incorpora innovaciones clave: la atención con clave-valor latente (MLA) y el enrutamiento
+                eficiente de expertos. Esta simulación usa dimensiones reducidas para hacerlo pedagógico.</p>
+            </div>
+
+            <div class="ov-section">
+                <h3>Parámetros reales vs. simulador</h3>
+                <table class="ov-params-table">
+                    <tr><th>Parámetro</th><th>DeepSeek-V3 real</th><th>Simulador</th></tr>
+                    <tr><td>Vocabulario</td><td>128 000 tokens</td><td>20 palabras</td></tr>
+                    <tr><td>Dim. embedding (d_model)</td><td>7 168</td><td>8</td></tr>
+                    <tr><td>Dim. latente MLA (d_c)</td><td>~512</td><td>4</td></tr>
+                    <tr><td>Heads de atención</td><td>128</td><td>4</td></tr>
+                    <tr><td>Expertos totales</td><td>256</td><td>8</td></tr>
+                    <tr><td>Top-K seleccionados</td><td>8</td><td>1 / 2 / 3</td></tr>
+                    <tr><td>Expertos compartidos</td><td>2</td><td>1</td></tr>
+                    <tr><td>Capas</td><td>61</td><td>1 / 2</td></tr>
+                    <tr><td>FFN hidden por experto</td><td>18 432</td><td>16</td></tr>
+                </table>
+            </div>
+
+            <div class="ov-grid">
+                <div class="ov-section">
+                    <h3>MLA — Multi-head Latent Attention</h3>
+                    <p>El KV-cache en atención estándar crece con el número de tokens y ocupa gran
+                    memoria. MLA comprime las claves (K) y valores (V) a un <strong>espacio latente</strong>
+                    de menor dimensión (d_c = 4 en la simulación), y los reconstruye antes de calcular
+                    la atención. Esto reduce la memoria sin perder calidad.</p>
+                </div>
+
+                <div class="ov-section ov-section--moe">
+                    <h3>MoE — Mixture of Experts</h3>
+                    <p>En lugar de procesar cada token con todos los parámetros, se disponen
+                    <strong>N expertos especializados</strong>. Un <em>router</em> selecciona los
+                    Top-K más relevantes para cada token. Un experto compartido siempre se activa.
+                    Esto permite escalar el modelo sin aumentar el cómputo proporcional.</p>
+                </div>
+            </div>
+
+            <div class="ov-section">
+                <h3>Router y balance de carga</h3>
+                <p>El router aplica <strong>función sigmoide</strong> (no softmax) sobre la proyección
+                lineal del token, lo que permite que los scores sean independientes entre expertos.
+                Un sesgo por experto ("expert bias") se ajusta durante el entrenamiento para evitar
+                que siempre se elijan los mismos expertos.</p>
+            </div>
+
+            <div class="ov-grid">
+                <div class="ov-section">
+                    <h3>Modo paso a paso</h3>
+                    <p>Permite detenerse en cada operación — tokenización, embedding, MLA, MoE,
+                    predicción — para observar los datos en cada etapa.</p>
+                </div>
+
+                <div class="ov-section">
+                    <h3>Modo automático</h3>
+                    <p>Avance continuo con velocidad configurable (0.8 s a 4 s por paso).
+                    Ideal para seguir el flujo completo sin interacción manual.</p>
+                </div>
+            </div>
+
+            <div class="ov-section ov-section-last">
+                <h3>Hiperparámetros configurables</h3>
+                <p>Podés cambiar la frase de entrada, la temperatura del Softmax,
+                el número de expertos Top-K seleccionados y las capas a simular.
+                Cada cambio reinicia la simulación para un nuevo recorrido.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tooltip: Token -->
+    <div id="token-tooltip" class="info-tooltip">
+        <h3>¿Qué es un token?</h3>
+        <p>Un <strong>token</strong> es la unidad mínima de texto que procesa el modelo.
+        Puede ser una palabra completa, parte de ella, o un signo de puntuación.</p>
+        <p>En esta simulación, el vocabulario tiene solo <strong>20 palabras</strong> del dominio IA
+        (en castellano). En DeepSeek-V3 real el vocabulario es de 128 000 tokens.</p>
+        <h3>Tokenización</h3>
+        <p>El texto de entrada se divide en tokens y a cada uno se le asigna un
+        <strong>ID numérico</strong> que lo identifica unívocamente en el vocabulario.
+        Ese ID se usa para buscar su vector de embedding.</p>
+        <div class="tooltip-note">
+            En modelos reales, palabras poco frecuentes se dividen en sub-tokens (subword
+            tokenization). Por ejemplo, "tokenización" podría quedar como
+            ["token", "ización"].
+        </div>
+    </div>
+
+    <!-- Tooltip: Embedding -->
+    <div id="embed-tooltip" class="info-tooltip">
+        <h3>Vectores de Embedding</h3>
+        <p>Cada token se mapea a un <strong>vector denso</strong> de d_model dimensiones
+        (8 en la simulación; 7168 en DeepSeek real). Este vector es la representación
+        semántica inicial del token.</p>
+        <div class="tooltip-formula">embed(token) = W_embed[token_id] ∈ ℝ^d_model</div>
+        <p>Los pesos de la matriz de embedding W_embed se aprenden durante el entrenamiento.
+        Tokens similares semánticamente terminan con vectores cercanos en el espacio.</p>
+        <div class="tooltip-note">
+            El embedding es el punto de partida de toda la cadena de procesamiento.
+            Las capas siguientes transforman estos vectores para capturar contexto.
+        </div>
+    </div>
+
+    <!-- Tooltip: MLA -->
+    <div id="mla-tooltip" class="info-tooltip">
+        <h3>Multi-head Latent Attention (MLA)</h3>
+        <p>En la atención multi-cabezal estándar (MHA), el KV-cache crece con el número
+        de tokens en contexto, ocupando mucha memoria. MLA lo comprime:</p>
+        <div class="tooltip-formula">c = x · W_down ∈ ℝ^d_c &nbsp; (d_c ≪ d_model)</div>
+        <p>Luego reconstruye K y V desde el vector latente c:</p>
+        <div class="tooltip-formula">K = c · W_up_K &nbsp; V = c · W_up_V</div>
+        <h3>¿Por qué importa?</h3>
+        <p>Al almacenar solo c (y no K, V completos), el KV-cache se reduce
+        <strong>drasticamente</strong>. En DeepSeek-V3 la reducción es de ~13×
+        respecto a MHA estándar.</p>
+    </div>
+
+    <!-- Tooltip: MoE -->
+    <div id="moe-tooltip" class="info-tooltip">
+        <h3>Mixture of Experts (MoE)</h3>
+        <p>En lugar de una sola FFN densa por capa, hay <strong>N expertos</strong>
+        (redes FFN separadas), y un <em>router</em> elige cuáles activar por token:</p>
+        <ul>
+            <li>Solo <strong>Top-K expertos</strong> se activan (K ≪ N)</li>
+            <li>Un <strong>experto compartido</strong> siempre contribuye</li>
+            <li>Los pesos del router se aprenden junto con los expertos</li>
+        </ul>
+        <h3>Ventaja principal</h3>
+        <p>MoE permite tener modelos con muchos más parámetros (671 B en DeepSeek-V3)
+        sin aumentar proporcionalmente el cómputo por token (solo 37 B activos).</p>
+        <div class="tooltip-note">
+            El desafío es el <em>balance de carga</em>: que todos los expertos se usen
+            de manera equitativa, no que solo unos pocos acaparen todo el tráfico.
+        </div>
+    </div>
+
+    <!-- Tooltip: Router -->
+    <div id="router-tooltip" class="info-tooltip">
+        <h3>¿Cómo funciona el router?</h3>
+        <p>Para cada token, el router calcula un score por experto:</p>
+        <div class="tooltip-formula">score_e = sigmoid(x · W_router[:,e] + bias_e)</div>
+        <p>La función <strong>sigmoide</strong> produce valores entre 0 y 1 de forma
+        independiente por experto (a diferencia de softmax, que es competitivo).</p>
+        <h3>Top-K y normalización</h3>
+        <p>Se seleccionan los K expertos con mayor score. Sus pesos se normalizan
+        (dividiendo por la suma) para que la combinación esté en la misma escala.</p>
+        <div class="tooltip-note">
+            El "expert bias" (sesgo por experto) se ajusta durante el entrenamiento
+            para forzar balance de carga: si un experto es muy usado, su bias baja.
+        </div>
+    </div>
+
+    <!-- Tooltip: Output -->
+    <div id="output-tooltip" class="info-tooltip">
+        <h3>Predicción del siguiente token</h3>
+        <p>La representación del <strong>último token</strong> se proyecta al espacio
+        del vocabulario mediante una capa lineal:</p>
+        <div class="tooltip-formula">logits = x_last · W_out ∈ ℝ^|V|</div>
+        <p>Luego se aplica <strong>Softmax con temperatura</strong> para obtener
+        probabilidades:</p>
+        <div class="tooltip-formula">P(token) = softmax(logits / T)</div>
+        <h3>Efecto de la temperatura</h3>
+        <p>Temperatura <strong>&lt; 1</strong> → distribución más concentrada (más
+        determinista). Temperatura <strong>&gt; 1</strong> → distribución más
+        uniforme (más aleatoria / creativa).</p>
+        <div class="tooltip-note">
+            En generación auto-regresiva, el token predicho se concatena a la entrada
+            y el proceso se repite hasta generar el texto completo.
+        </div>
+    </div>
+
+    <script src="js/model.js"></script>
+    <script src="js/arch.js"></script>
+    <script src="js/ui.js"></script>
+    <script src="js/main.js"></script>
+
+    <script>
+    // Tooltips: posicionamiento inteligente con flip + clamp
+    (function () {
+        const MARGIN = 10;
+        let activeTooltip = null;
+
+        function getTooltip(id) { return document.getElementById(id); }
+
+        function showTip(id, e) {
+            if (activeTooltip && activeTooltip !== id) hideTip(activeTooltip);
+            activeTooltip = id;
+            const tip = getTooltip(id);
+            if (tip) { tip.classList.add('visible'); positionTip(tip, e); }
+        }
+
+        function hideTip(id) {
+            const tip = getTooltip(id);
+            if (tip) tip.classList.remove('visible');
+            if (activeTooltip === id) activeTooltip = null;
+        }
+
+        function positionTip(tip, e) {
+            const tw = tip.offsetWidth  || 300;
+            const th = tip.offsetHeight || 180;
+            let lx = e.clientX + 14, ly = e.clientY + 14;
+            if (lx + tw > window.innerWidth  - MARGIN) lx = e.clientX - tw - 14;
+            if (ly + th > window.innerHeight - MARGIN) ly = e.clientY - th - 14;
+            lx = Math.max(MARGIN, Math.min(lx, window.innerWidth  - tw - MARGIN));
+            ly = Math.max(MARGIN, Math.min(ly, window.innerHeight - th - MARGIN));
+            tip.style.left = lx + 'px';
+            tip.style.top  = ly + 'px';
+        }
+
+        // Event delegation sobre el documento
+        document.addEventListener('mouseover', function (e) {
+            // Títulos de sección con data-tooltip
+            const titled = e.target.closest('[data-tooltip]');
+            if (titled) { showTip(titled.dataset.tooltip, e); return; }
+            // Chips de token
+            if (e.target.closest('.token-chip')) { showTip('token-tooltip', e); return; }
+            // Barras del router
+            if (e.target.closest('.router-bar-row')) { showTip('router-tooltip', e); return; }
+        });
+
+        document.addEventListener('mouseout', function (e) {
+            const titled = e.target.closest('[data-tooltip]');
+            if (titled) { hideTip(titled.dataset.tooltip); return; }
+            if (e.target.closest('.token-chip')) { hideTip('token-tooltip'); return; }
+            if (e.target.closest('.router-bar-row')) { hideTip('router-tooltip'); return; }
+        });
+
+        document.addEventListener('mousemove', function (e) {
+            if (activeTooltip) positionTip(getTooltip(activeTooltip), e);
+        });
+    })();
+    </script>
+</body>
+</html>
