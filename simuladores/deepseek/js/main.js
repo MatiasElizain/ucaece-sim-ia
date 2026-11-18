@@ -66,6 +66,32 @@
     recordStatus.id = 'evidence-status';
     recordStatus.setAttribute('role', 'status');
     btnReset.parentNode.appendChild(recordStatus);
+    const btnView = document.createElement('button');
+    btnView.type = 'button';
+    btnView.id = 'btn-view-evidence';
+    btnView.className = btnReset.className;
+    btnView.textContent = 'Mostrar registro';
+    btnReset.parentNode.appendChild(btnView);
+    const recordText = document.createElement('textarea');
+    recordText.id = 'evidence-json';
+    recordText.readOnly = true;
+    recordText.rows = 8;
+    recordText.style.display = 'none';
+    recordText.style.width = '100%';
+    recordText.setAttribute('aria-label', 'Registro JSON de ejecuciones');
+    btnReset.parentNode.appendChild(recordText);
+
+    function recordPayload() {
+        return { schemaVersion: 1, origin: 'registro_interfaz',
+            dateUTC: new Date().toISOString(), url: window.location.href,
+            sourceGitBlobSHA: 'dd434f068c3a8ee561a833d81f4f81434b798047',
+            note: 'El JSON registra valores; las dos capturas completas del navegador se adjuntan aparte.',
+            results: recordedRuns };
+    }
+    btnView.addEventListener('click', () => {
+        recordText.value = JSON.stringify(recordPayload(), null, 2);
+        recordText.style.display = 'block';
+    });
 
     btnRecord.addEventListener('click', () => {
         if (!inference || !inferenceHP) {
@@ -106,11 +132,7 @@
             recordStatus.textContent = 'No hay ejecuciones guardadas todavía.';
             return;
         }
-        const payload = { schemaVersion: 1, origin: 'registro_interfaz',
-            dateUTC: new Date().toISOString(), url: window.location.href,
-            sourceGitBlobSHA: 'dd434f068c3a8ee561a833d81f4f81434b798047',
-            note: 'El JSON registra valores; las dos capturas completas del navegador se adjuntan aparte.',
-            results: recordedRuns };
+        const payload = recordPayload();
         const url = URL.createObjectURL(new Blob([JSON.stringify(payload,null,2)], {type:'application/json'}));
         const link = document.createElement('a');
         link.href = url; link.download = 'registro_interfaz.json'; link.click();
