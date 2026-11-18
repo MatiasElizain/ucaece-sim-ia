@@ -8,6 +8,9 @@
     let steps    = [];      // secuencia de pasos a visualizar
     let stepIdx  = 0;       // próximo paso a ejecutar
     let phase    = 'init';  // init | ready | running | done
+    let inferenceHP = null;
+    let generation = 0;
+    const recordedRuns = [];
 
     let autoTimer   = null;
     let autoPlaying = false;
@@ -45,6 +48,75 @@
     // ── Inicializar ───────────────────────────────────────────────────────────
 
     resetSimulation();
+
+    // Registro propio: exporta esta inferencia, sin reconstruir el modelo ni cambiar sus pesos.
+    const btnRecord = document.createElement('button');
+    btnRecord.type = 'button';
+    btnRecord.id = 'btn-record-evidence';
+    btnRecord.className = btnReset.className;
+    btnRecord.textContent = 'Guardar ejecución';
+    btnReset.parentNode.appendChild(btnRecord);
+    const btnDownload = document.createElement('button');
+    btnDownload.type = 'button';
+    btnDownload.id = 'btn-download-evidence';
+    btnDownload.className = btnReset.className;
+    btnDownload.textContent = 'Descargar registro JSON';
+    btnReset.parentNode.appendChild(btnDownload);
+    const recordStatus = document.createElement('span');
+    recordStatus.id = 'evidence-status';
+    recordStatus.setAttribute('role', 'status');
+    btnReset.parentNode.appendChild(recordStatus);
+
+    btnRecord.addEventListener('click', () => {
+        if (!inference || !inferenceHP) {
+            recordStatus.textContent = 'Primero recorrer al menos un paso de la ejecución.';
+            return;
+        }
+        const hp = getHP();
+        if (hp.phrase !== inferenceHP.phrase || hp.temp !== inferenceHP.temp ||
+            hp.topK !== inferenceHP.topK || hp.nLayers !== inferenceHP.nLayers) {
+            recordStatus.textContent = 'Los controles cambiaron: presionar Reiniciar antes de registrar.';
+            return;
+        }
+        let run = recordedRuns.find(r => r.generation === generation);
+        if (!run) {
+            const counts = Array(DeepSeekModel.N_EXPERTS).fill(0);
+            inference.layers[0].moeResults.forEach(t => t.topKIdx.forEach(i => counts[i]++));
+            run = {
+                id: 'E' + (recordedRuns.length + 1), generation,
+                dateUTC: new Date().toISOString(), url: window.location.href,
+                origin: 'Inferencia conservada de la interfaz; no se reconstruye al registrar',
+                phrase: inferenceHP.phrase, temperature: inferenceHP.temp,
+                topK: model.topK, nLayers: inferenceHP.nLayers, steps: steps.length,
+                kvStandardPerTokenPerLayer: 16, kvMLAPerTokenPerLayer: 4,
+                kvStandardPhrasePerLayer: 16 * inference.tokens.length,
+                kvMLAPhrasePerLayer: 4 * inference.tokens.length,
+                ffnPercentUI: 100 * (model.topK + 1) / 8,
+                ffnPercentIncludingShared: 100 * (model.topK + 1) / 9,
+                routerFirstTokenSum: inference.layers[0].moeResults[0].scores.reduce((a,b) => a+b,0),
+                layer1Counts: counts, inference, observedSteps: []
+            };
+            recordedRuns.push(run);
+        }
+        if (!run.observedSteps.includes(stepIdx)) run.observedSteps.push(stepIdx);
+        recordStatus.textContent = `${run.id} guardada en paso ${stepIdx}/${steps.length}. Descargar el JSON antes de cerrar.`;
+    });
+    btnDownload.addEventListener('click', () => {
+        if (!recordedRuns.length) {
+            recordStatus.textContent = 'No hay ejecuciones guardadas todavía.';
+            return;
+        }
+        const payload = { schemaVersion: 1, origin: 'registro_interfaz',
+            dateUTC: new Date().toISOString(), url: window.location.href,
+            sourceGitBlobSHA: 'dd434f068c3a8ee561a833d81f4f81434b798047',
+            note: 'El JSON registra valores; las dos capturas completas del navegador se adjuntan aparte.',
+            results: recordedRuns };
+        const url = URL.createObjectURL(new Blob([JSON.stringify(payload,null,2)], {type:'application/json'}));
+        const link = document.createElement('a');
+        link.href = url; link.download = 'registro_interfaz.json'; link.click();
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+        recordStatus.textContent = `${recordedRuns.length} ejecuciones exportadas. Conservar también las capturas.`;
+    });
 
     btnStep.addEventListener('click',     () => { stopAutoPlay(); executeStep(); });
     btnLayer.addEventListener('click',    () => { stopAutoPlay(); executeOneLayer(); });
@@ -92,6 +164,8 @@
         phase    = 'init';
         stepIdx  = 0;
         inference = null;
+        inferenceHP = null;
+        generation++;
 
         const hp = getHP();
 
@@ -153,6 +227,7 @@
         if (!inference) {
             const hp = getHP();
             inference = DeepSeekModel.runInference(model, hp.phrase, hp.temp);
+            inferenceHP = hp;
         }
 
         if (stepIdx >= steps.length) {
@@ -213,6 +288,7 @@
         if (!inference) {
             const hp = getHP();
             inference = DeepSeekModel.runInference(model, hp.phrase, hp.temp);
+            inferenceHP = hp;
         }
         if (stepIdx >= steps.length) return;
 
@@ -245,8 +321,10 @@
         if (!inference) {
             const hp = getHP();
             inference = DeepSeekModel.runInference(model, hp.phrase, hp.temp);
+            inferenceHP = hp;
         }
         while (stepIdx < steps.length) executeStep();
     }
 
 })();
+
