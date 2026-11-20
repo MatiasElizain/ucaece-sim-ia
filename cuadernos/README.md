@@ -1,8 +1,8 @@
 # Prácticas de la Actividad Integradora
 
-Autor: Matias Agustin Elizaincin. Sistemas Inteligentes, Universidad CAECE.
+Autor: Matias Agustin Elizaincin-Santiago Bertolotto. Sistemas Inteligentes, Universidad CAECE.
 
 - [Abrir MNIST en Google Colab](https://colab.research.google.com/github/MatiasElizain/ucaece-sim-ia/blob/main/cuadernos/MNIST.ipynb)
 - [Abrir CIFAR-10 en Google Colab](https://colab.research.google.com/github/MatiasElizain/ucaece-sim-ia/blob/main/cuadernos/CIFAR10.ipynb)
 
-Los cuadernos conservan las salidas de entrenamientos reales ejecutados en CPU local de Windows. Sus metadatos y celdas identifican ese origen. Colab permite revisar las salidas, guardar una copia en Drive y volver a ejecutar el código. La publicación de los cuadernos no implica que las salidas conservadas se hayan obtenido en una GPU de Colab.
+Ambas prácticas fueron ejecutadas en Google Colab el 20 de noviembre de 2026, en Linux con GPU disponible. Los cuadernos conservan el código y todas las salidas de esas corridas. MNIST alcanzó 98,90% de exactitud de prueba con M2_dropout_5; CIFAR-10 alcanzó 70,28% con el modelo de 15 épocas, elegido por pérdida de validación antes de mirar el test.
